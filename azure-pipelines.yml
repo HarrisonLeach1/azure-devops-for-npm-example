@@ -16,18 +16,28 @@ steps:
   displayName: 'Install Node.js'
 
 - script: |
-    npm install
+    npm ci
     npm run build
-  displayName: 'npm install and build'
+  displayName: 'npm ci and build'
+  env:
+    CI: true
 
-- task: Npm@1
-  inputs:
-    command: 'custom'
-    customCommand: 'test'
-  displayName: 'npm test'
+- script: npm test -- --coverage --ci --reporters=default --reporters=jest-junit --coverageReporters=cobertura
+  displayName: "npm test"
+  env:
+    CI: true
 
-- task: Npm@1
+- task: PublishTestResults@2
+  displayName: "Publish Test Results"
   inputs:
-    command: publish
-    publishEndpoint: 'HarrisonLeach1 NPM repo'
-  displayName: 'npm publish'
+    testResultsFiles: junit.xml
+    mergeTestResults: true
+  condition: succeededOrFailed()
+
+- task: PublishCodeCoverageResults@1
+  displayName: "Publish code coverage"
+  inputs:
+    codeCoverageTool: Cobertura
+    summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
+    reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
+    failIfCoverageEmpty: true

@@ -1,0 +1,45 @@
+trigger:
+    tags:
+        include:
+            - "*"
+pool:
+    vmImage: "ubuntu-latest"
+
+steps:
+    - task: NodeTool@0
+      inputs:
+          versionSpec: "10.x"
+      displayName: "Install Node.js"
+
+    - script: |
+          npm ci
+          npm run build
+      displayName: "npm ci and build"
+      env:
+          CI: true
+
+    - task: Npm@1
+      inputs:
+          command: "custom"
+          customCommand: "pack"
+      displayName: "npm pack"
+
+    - task: CopyFiles@2
+      inputs:
+          sourceFolder: "$(Build.SourcesDirectory)"
+          contents: "*.tgz"
+          targetFolder: $(Build.ArtifactStagingDirectory)/build
+      displayName: "Copy npm package"
+
+    - task: CopyFiles@2
+      inputs:
+          sourceFolder: "$(Build.SourcesDirectory)"
+          contents: "package.json"
+          targetFolder: $(Build.ArtifactStagingDirectory)/build
+      displayName: "Copy package.json"
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+          pathtoPublish: "$(Build.ArtifactStagingDirectory)/build"
+          artifactName: build
+      displayName: "Publish build artifact"
